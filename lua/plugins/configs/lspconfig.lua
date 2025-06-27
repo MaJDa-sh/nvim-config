@@ -4,12 +4,20 @@ require "nvchad.lsp"
 local M = {}
 local utils = require "core.utils"
 
--- export on_attach & capabilities for custom lspconfigs
 M.on_attach = function(client, bufnr)
-  utils.load_mappings("lspconfig", { buffer = bufnr })
-
   if client.server_capabilities.signatureHelpProvider then
     require("nvchad.signature").setup(client)
+  end
+
+  if client.server_capabilities.documentDiagnosticsProvider then
+    vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+      vim.lsp.diagnostic.on_publish_diagnostics, {
+        virtual_text = true,
+        signs = true,
+        underline = true,
+        update_in_insert = true,
+      }
+    )
   end
 end
 
@@ -60,6 +68,17 @@ require("lspconfig").lua_ls.setup {
         maxPreload = 100000,
         preloadFileSize = 10000,
       },
+    },
+  },
+}
+require("lspconfig").solargraph.setup {
+  on_attach = M.on_attach,
+  capabilities = M.capabilities,
+  settings = {
+    solargraph = {
+      diagnostics = true,
+      formatting = true,
+      useBundler = true,
     },
   },
 }
